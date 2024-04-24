@@ -1,0 +1,9 @@
+POST http://localhost:3003/api/blogs
+Content-type: application/json
+
+{
+  "title": "Breaking News",
+  "author": "Indi Cantik",
+  "url": "http://test.com",
+  "likes": 120938
+}
