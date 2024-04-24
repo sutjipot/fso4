@@ -2,8 +2,8 @@ POST http://localhost:3003/api/blogs
 Content-type: application/json
 
 {
-  "title": "Breaking News",
-  "author": "Indi Cantik",
-  "url": "http://test.com",
-  "likes": 120938
+  "title": "World Cup 2018",
+  "author": "Tity Botak",
+  "url": "http://example.com",
+  "likes": 2938
 }
