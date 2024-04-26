@@ -2,8 +2,7 @@ POST http://localhost:3003/api/blogs
 Content-type: application/json
 
 {
-  "title": "World Cup 2018",
+  "title": "Saminamina",
   "author": "Tity Botak",
-  "url": "http://example.com",
-  "likes": 2938
+  "url": "http://birthday.com"
 }

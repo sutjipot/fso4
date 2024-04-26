@@ -1,0 +1,9 @@
+PUT http://localhost:3003/api/blogs/6629879cafaefa57e84d507d 
+content-type: application/json
+
+{
+    "title": "Secrets to being ugly",
+    "author": "Tity botak",
+    "url": "http://tityboti-isbald.com",
+    "likes": 800
+}
