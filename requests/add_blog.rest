@@ -1,8 +1,10 @@
 POST http://localhost:3003/api/blogs
 Content-type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im9uaW9uIiwiaWQiOiI2NjJkNjUwNDE0MzNhMDJmYWQwNGI4OTkiLCJpYXQiOjE3MTQyNTM3Mzd9.YmYZVkG2f27RKFOz90PmwFMFDMsMQdqh3uyn5rPevo0
 
 {
-  "title": "Saminamina",
-  "author": "Tity Botak",
-  "url": "http://birthday.com"
+  "title": "anu web token apakah",
+  "author": "Ganteng Serigala",
+  "url": "http://whatwhatwhat.com",
+  "userId": "662d65041433a02fad04b899"
 }
