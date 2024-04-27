@@ -2,15 +2,17 @@ const blogRouter = require('express').Router();
 const Blog = require('../models/blog');
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
+const logger = require('../utils/logger');
+const { userExtractor } = require('../utils/middleware');
 
 
-const getTokenFrom = request => {
-  const authorization = request.get('Authorization')
-  if (authorization && authorization.startsWith('Bearer ')) {
-    return authorization.replace('Bearer ', '')
-  }
-  return null
-}
+// const getTokenFrom = request => {
+//  const authorization = request.get('Authorization')
+//  if (authorization && authorization.startsWith('Bearer ')) {
+    //return authorization.replace('Bearer ', '')
+  //}
+  //return null
+//}
 
 // get all blogs
 blogRouter.get('/', async (request, response) => {
@@ -19,14 +21,14 @@ blogRouter.get('/', async (request, response) => {
 })
 
 // add new blog
-blogRouter.post('/', async (request, response, next) => {
+blogRouter.post('/', userExtractor, async (request, response, next) => {
   const body = request.body
+  const user = await request.user
 
-  const decodedToken = jwt.verify(getTokenFrom(request), process.env.SECRET)
-  if (!decodedToken.id) {
-    return response.status(401).json({ error: 'token invalid' })
-  }
-  const user = await User.findById(decodedToken.id)
+  // const decodedToken = jwt.verify(getTokenFrom(request), process.env.SECRET)
+  //if (!decodedToken.id) {
+    //return response.status(401).json({ error: 'token invalid' })
+  //}
   const likes = body.likes === undefined ? 0 : body.likes;
   
   const blog = new Blog(
@@ -57,10 +59,18 @@ blogRouter.get('/:id', async (request, response, next) => {
 })
 
 // delete blog by id
-blogRouter.delete('/:id', async (request, response, next) => {
-  await Blog.findByIdAndDelete(request.params.id)
-  response.status(204).end()
+blogRouter.delete('/:id', userExtractor, async (request, response, next) => {
+  const user = await request.user
+  const blog = await Blog.findById(request.params.id)
 
+  await Blog.findById(request.params.id)
+
+  if (blog.user.toString() === user._id.toString()) {
+    await Blog.findByIdAndDelete(request.params.id)
+    response.status(204).end()
+  } else {
+    respqnse.status(401).json({ error: 'unauthorized' })
+  }
 })
 
 // update blog by id
