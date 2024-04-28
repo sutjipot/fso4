@@ -2,17 +2,8 @@ const blogRouter = require('express').Router();
 const Blog = require('../models/blog');
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
-const logger = require('../utils/logger');
 const { userExtractor } = require('../utils/middleware');
 
-
-// const getTokenFrom = request => {
-//  const authorization = request.get('Authorization')
-//  if (authorization && authorization.startsWith('Bearer ')) {
-    //return authorization.replace('Bearer ', '')
-  //}
-  //return null
-//}
 
 // get all blogs
 blogRouter.get('/', async (request, response) => {
@@ -63,31 +54,34 @@ blogRouter.delete('/:id', userExtractor, async (request, response, next) => {
   const user = await request.user
   const blog = await Blog.findById(request.params.id)
 
-  await Blog.findById(request.params.id)
-
   if (blog.user.toString() === user._id.toString()) {
     await Blog.findByIdAndDelete(request.params.id)
     response.status(204).end()
   } else {
-    respqnse.status(401).json({ error: 'unauthorized' })
+    response.status(401).json({ error: 'unauthorized' })
   }
 })
 
-// update blog by id
-blogRouter.put('/:id', async (request, response, next) => {
-  const body = request.body
 
-  const blog = {
+// update blog by id
+blogRouter.put('/:id', userExtractor, async (request, response, next) => {
+  const body = request.body
+  const user = await request.user
+  const blog = await Blog.findById(request.params.id)
+
+  const updateBlog = {
     title: body.title,
     author: body.author,
     url: body.url,
     likes: body.likes,
   }
 
-  const updated = await Blog.findByIdAndUpdate(request.params.id, blog, { new: true })
-  response.json(updated)
-  
-
+  if (blog.user.toString() === user._id.toString()) {
+    const updated = await Blog.findByIdAndUpdate(request.params.id, updateBlog, { new: true })
+    response.json(updated)
+  } else {
+    response.status(401).json({ error: 'unauthorized' })
+  }
 })
 
 module.exports = blogRouter;

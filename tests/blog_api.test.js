@@ -1,20 +1,47 @@
 const { test, after, beforeEach, describe } = require('node:test')
 const assert = require('node:assert')
-const Blog = require('../models/blog')
 const mongoose = require('mongoose')
 const supertest = require('supertest')
 const app = require('../app')
 const api = supertest(app)
 const helper = require('./test_helper')
 const { url } = require('node:inspector')
+const bcrypt = require('bcrypt')
+
+const Blog = require('../models/blog')
+const User = require('../models/user')
+
+var testToken 
+var invalidTestToken 
 
 
 describe('when there is initially some blogs saved', () => {
 
   // BEFORE EACH TEST, DELETE ALL BLOGS AND INSERT INITIAL BLOGS
   beforeEach(async () => {
+
+    await User.deleteMany({})
+
+    await api
+      .post('/api/users')
+      .send(helper.initialUsers[0])
+
+    await api
+      .post('/api/login')
+      .send(helper.userCredentials[0])
+      .expect(res => { testToken = res.body.token })
+
     await Blog.deleteMany({})
-    await Blog.insertMany(helper.initialBlogs)
+
+    await api
+      .post('/api/blogs')
+      .set('Authorization', `bearer ${testToken}`)
+      .send(helper.initialBlogs[0])
+
+    await api
+      .post('/api/blogs')
+      .set('Authorization', `bearer ${testToken}`)
+      .send(helper.initialBlogs[1])
   })
 
   // BLOGS ARE RETURNED AS JSON
@@ -48,7 +75,6 @@ describe('when there is initially some blogs saved', () => {
   })
 
 
-
   // VIEWING SPECIFIC BLOG
   describe('viewing a specific blog', () => {
 
@@ -60,7 +86,9 @@ describe('when there is initially some blogs saved', () => {
         .get(`/api/blogs/${blogToView.id}`)
         .expect(200)
         .expect('Content-Type', /application\/json/)
-      assert.deepStrictEqual(resultBlog.body, blogToView)
+
+      const processed = JSON.parse(JSON.stringify(blogToView))
+      assert.deepStrictEqual(resultBlog.body, processed)
     })
 
 
@@ -87,6 +115,7 @@ describe('when there is initially some blogs saved', () => {
     
       await api
         .post('/api/blogs')
+        .set('Authorization', `bearer ${testToken}`)
         .send(newBlog)
         .expect(201)
         .expect('Content-Type', /application\/json/)
@@ -108,6 +137,7 @@ describe('when there is initially some blogs saved', () => {
 
       await api
         .post('/api/blogs')
+        .set('Authorization', `bearer ${testToken}`)
         .send(newBlog)
         .expect(201)
         .expect('Content-Type', /application\/json/)
@@ -130,6 +160,7 @@ describe('when there is initially some blogs saved', () => {
 
       await api
         .post('/api/blogs')
+        .set('Authorization', `bearer ${testToken}`)
         .send(newBlog)
         .expect(400)
 
@@ -147,13 +178,36 @@ describe('when there is initially some blogs saved', () => {
 
       await api
         .post('/api/blogs')
+        .set('Authorization', `bearer ${testToken}`)
         .send(newBlog)
         .expect(400)
 
       const blogsAtEnd = await helper.blogsInDb()
       assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length)
     })
+
+    // NO TOKEN = 401
+    test('no token = 401', async () => {
+      const newBlog = {
+        title: "Why is coding so hard",
+        author: "Indi Cantik",
+        url: "http://indicantik-isstressed.com",
+      }
+
+      await api
+        .post('/api/blogs')
+        .send(newBlog)
+        .expect(401)
+
+      const blogsAtEnd = await helper.blogsInDb()
+
+      assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length)
+
+    })
   })
+
+
+
 
   // DELETING BLOG
   describe('deletion of a blog', () => {
@@ -165,6 +219,7 @@ describe('when there is initially some blogs saved', () => {
 
       await api
         .delete(`/api/blogs/${blogToDelete.id}`)
+        .set('Authorization', `bearer ${testToken}`)
         .expect(204)
 
       const blogsAtEnd = await helper.blogsInDb()
@@ -172,6 +227,32 @@ describe('when there is initially some blogs saved', () => {
       const contents = blogsAtEnd.map(r => r.title)
       assert(!contents.includes(blogToDelete.title))
       
+    })
+
+    // INVALID TOKEN = 401
+    test('invalid token = 401', async () => {
+      await api
+        .post('/api/users')
+        .send(helper.initialUsers[1])
+
+      await api
+        .post('/api/login')
+        .send(helper.userCredentials[1])
+        .expect(res => { invalidTestToken = res.body.token })
+
+      const blogsAtStart = await helper.blogsInDb()
+      const blogToDelete = blogsAtStart[0]
+
+      await api
+        .delete(`/api/blogs/${blogToDelete.id}`)
+        .set('Authorization', `bearer ${invalidTestToken}`)
+        .expect(401)
+
+      const blogsAtEnd = await helper.blogsInDb()
+
+      assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length)
+      const titles = blogsAtEnd.map(r => r.title)
+      assert(titles.includes(blogToDelete.title))
     })
   })
 
@@ -185,14 +266,12 @@ describe('when there is initially some blogs saved', () => {
       const blogToUpdate = blogsAtStart[0]
 
       const updatedBlog = {
-        title: "Secrets to being pretty",
-        author: "Indi Cantik",
-        url: "http://indicantik-iscantik.com",
         likes: 2945,
       }
 
       await api
         .put(`/api/blogs/${blogToUpdate.id}`)
+        .set('Authorization', `bearer ${testToken}`)
         .send(updatedBlog)
         .expect(200)
 
@@ -202,6 +281,39 @@ describe('when there is initially some blogs saved', () => {
       const likes = blogsAtEnd.map(r => r.likes)
       assert(likes.includes(2945))
       assert(!likes.includes(blogToUpdate.likes))
+    })
+
+    // INVALID TOKEN = 401
+    test('invalid token = 401', async () => {
+      await api
+        .post('/api/users')
+        .send(helper.initialUsers[1])
+
+      await api
+        .post('/api/login')
+        .send(helper.userCredentials[1])
+        .expect(res => { invalidTestToken = res.body.token })
+
+      const blogsAtStart = await helper.blogsInDb()
+      const blogToUpdate = blogsAtStart[0]
+
+      const updatedBlog = {
+        likes: 2945,
+      }
+
+      await api
+        .put(`/api/blogs/${blogToUpdate.id}`)
+        .set('Authorization', `bearer ${invalidTestToken}`)
+        .send(updatedBlog)
+        .expect(401)
+
+      const blogsAtEnd = await helper.blogsInDb()
+      assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length)
+
+      const likes = blogsAtEnd.map(r => r.likes)
+      assert(!likes.includes(2945))
+      assert(likes.includes(blogToUpdate.likes))
+      
     })
   })
 
