@@ -33,6 +33,7 @@ blogRouter.post('/', userExtractor, async (request, response, next) => {
   )
   
   const savedBlog = await blog.save()
+  await savedBlog.populate('user', { username: 1, name: 1 })
   user.blogs = user.blogs.concat(savedBlog._id)
   await user.save()
   response.status(201).json(savedBlog)
@@ -79,6 +80,17 @@ blogRouter.put('/:id', userExtractor, async (request, response, next) => {
   if (blog.user.toString() === user._id.toString()) {
     const updated = await Blog.findByIdAndUpdate(request.params.id, updateBlog, { new: true })
     response.json(updated)
+  } else {
+    response.status(401).json({ error: 'unauthorized' })
+  }
+})
+
+blogRouter.put('/like/:id', userExtractor, async (request, response, ) => {
+  const user = await request.user
+
+  if (user) {
+    const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, { $inc: { likes: 1 } }, { new: true })
+    response.json(updatedBlog)
   } else {
     response.status(401).json({ error: 'unauthorized' })
   }

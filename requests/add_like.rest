@@ -1,0 +1,11 @@
+PUT http://localhost:3003/api/blogs/like/662d700676d294867fa877c2
+Content-Type: application/json
+Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im9uaW9uIiwiaWQiOiI2NjJkNjUwNDE0MzNhMDJmYWQwNGI4OTkiLCJpYXQiOjE3MTQ1ODg0NjIsImV4cCI6MTcxNDU5MjA2Mn0.7eN9ow2Ld-H4PImZiEbsqjZ8UTs2Lc6xe3g_h2X8xao
+
+{
+    "author": "Ganteng Serigala",
+    "title": "anu web token apakah",
+    "url": "http://whatwhatwhat.com",
+    "likes": 23423
+
+}
