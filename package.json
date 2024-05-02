@@ -3,8 +3,9 @@
     "start": "cross-env NODE_ENV=production node index.js",
     "dev": "cross-env NODE_ENV=development nodemon index.js",
     "test": "cross-env NODE_ENV=test node --test",
-    "build:ui": "rm -rf build && cd ../frontend && npm run build && cp -r build ../fso4",
-    "deploy:full": "npm run build:ui && npm run deploy"
+    "build:ui": "rm -rf build && cd ../bloglist-frontend && npm run build && cp -r build ../fso4",
+    "deploy:full": "npm run build:ui && npm run deploy",
+    "start:test": "set NODE_ENV=test && node index.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
